@@ -17,6 +17,9 @@ const GikoAvatar = () => {
     setIsThinking(true);
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      console.log('Attempting to connect to API at:', apiUrl);
+      console.log('Sending message:', userMessage);
+      
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: {
@@ -26,11 +29,38 @@ const GikoAvatar = () => {
           messages: [...messages, { type: 'user', text: userMessage }],
         }),
       });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API responded with status ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log('API Response data:', data);
+      
+      if (!data.response) {
+        console.error('Unexpected API response format:', data);
+        throw new Error('API response missing expected data');
+      }
+
       return data.response;
     } catch (error) {
-      console.error('Error getting AI response:', error);
-      return "( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. Can you try again?";
+      console.error('Detailed error in getAIResponse:', {
+        error: error.message,
+        stack: error.stack,
+        apiUrl: process.env.REACT_APP_API_URL,
+        environmentVars: {
+          nodeEnv: process.env.NODE_ENV,
+          apiUrl: process.env.REACT_APP_API_URL
+        }
+      });
+      
+      return `( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. 
+              Error details: ${error.message}. 
+              Please check the console for more information.`;
     } finally {
       setIsThinking(false);
     }
@@ -43,21 +73,34 @@ const GikoAvatar = () => {
   const handleClick = async () => {
     if (inputValue.trim() === '') return;
 
-    // Add user message
-    const userMessage = inputValue;
-    const updatedMessages = [
-      ...messages,
-      { type: 'user', text: userMessage }
-    ];
-    setMessages(updatedMessages);
-    setInputValue('');
+    try {
+      // Add user message
+      const userMessage = inputValue;
+      console.log('User input:', userMessage);
+      
+      const updatedMessages = [
+        ...messages,
+        { type: 'user', text: userMessage }
+      ];
+      setMessages(updatedMessages);
+      setInputValue('');
 
-    // Get and add AI response
-    const aiResponse = await getAIResponse(userMessage);
-    setMessages([
-      ...updatedMessages,
-      { type: 'giko', text: aiResponse }
-    ]);
+      // Get and add AI response
+      console.log('Requesting AI response...');
+      const aiResponse = await getAIResponse(userMessage);
+      console.log('Received AI response:', aiResponse);
+      
+      setMessages([
+        ...updatedMessages,
+        { type: 'giko', text: aiResponse }
+      ]);
+    } catch (error) {
+      console.error('Error in handleClick:', error);
+      setMessages(prev => [...prev, {
+        type: 'giko',
+        text: "( ; ω ; ) Something went wrong while processing your message..."
+      }]);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -65,6 +108,11 @@ const GikoAvatar = () => {
       handleClick();
     }
   };
+
+  // Log when component mounts
+  React.useEffect(() => {
+    console.log('GikoAvatar mounted with API URL:', process.env.REACT_APP_API_URL);
+  }, []);
 
   return (
     <div className="w-full max-w-md mx-auto p-4 bg-gray-100 rounded-lg shadow-lg">
