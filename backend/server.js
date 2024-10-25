@@ -15,8 +15,9 @@ console.log('Server starting with environment:', {
   hasApiKey: !!process.env.ANTHROPIC_API_KEY,
 });
 
+// Update CORS configuration to be more permissive
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://your-frontend-url.vercel.app'],
+  origin: '*', // Allow all origins in development
   methods: ['GET', 'POST'],
   credentials: true
 }));

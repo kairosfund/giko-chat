@@ -16,14 +16,16 @@ const GikoAvatar = () => {
   const getAIResponse = async (userMessage) => {
     setIsThinking(true);
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-      console.log('Attempting to connect to API at:', apiUrl);
-      console.log('Sending message:', userMessage);
+      // Get the API URL from environment or use the deployed backend URL
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://your-backend-url.vercel.app';
+      console.log('Current API URL:', apiUrl);
+      console.log('Current environment:', process.env.NODE_ENV);
       
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           messages: [...messages, { type: 'user', text: userMessage }],
@@ -31,6 +33,7 @@ const GikoAvatar = () => {
       });
 
       console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -58,9 +61,13 @@ const GikoAvatar = () => {
         }
       });
       
-      return `( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. 
-              Error details: ${error.message}. 
-              Please check the console for more information.`;
+      // Add the error message to the chat
+      setMessages(prev => [...prev, {
+        type: 'giko',
+        text: `( ; ω ; ) Error: ${error.message}`
+      }]);
+      
+      return null; // Return null so we don't add another message
     } finally {
       setIsThinking(false);
     }
@@ -90,10 +97,12 @@ const GikoAvatar = () => {
       const aiResponse = await getAIResponse(userMessage);
       console.log('Received AI response:', aiResponse);
       
-      setMessages([
-        ...updatedMessages,
-        { type: 'giko', text: aiResponse }
-      ]);
+      if (aiResponse) { // Only add AI response if we got one
+        setMessages(prev => [...prev, {
+          type: 'giko',
+          text: aiResponse
+        }]);
+      }
     } catch (error) {
       console.error('Error in handleClick:', error);
       setMessages(prev => [...prev, {
