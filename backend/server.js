@@ -9,7 +9,9 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN
+  origin: ['http://localhost:3000', 'https://your-frontend-url.vercel.app'],
+  methods: ['GET', 'POST'],
+  credentials: true
 }));
 app.use(express.json());
 
