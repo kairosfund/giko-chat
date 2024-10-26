@@ -8,16 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "index.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "env": {
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "NODE_ENV": "production"
-  }
+  ]
 }
