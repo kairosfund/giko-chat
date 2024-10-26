@@ -13,49 +13,30 @@ const GikoAvatar = () => {
 |  ⊃／(＿＿＿
 /  └-(＿＿＿／`;
 
-  // This would be your actual API call to Claude
   const getAIResponse = async (userMessage) => {
     setIsThinking(true);
     try {
-      // This is where you would make the actual API call to your backend
-      // const response = await fetch('your-backend-url/api/chat', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     messages: [...messages, { type: 'user', text: userMessage }],
-      //     character: 'giko',
-      //   }),
-      // });
-      // const data = await response.json();
-      // return data.response;
+      const response = await fetch('http://localhost:3001/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, { type: 'user', text: userMessage }].map(msg => ({
+            role: msg.type === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          }))
+        }),
+      });
 
-      // For now, returning a placeholder response
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-
-      // Simulate contextual responses based on keywords
-      const input = userMessage.toLowerCase();
-      if (input.includes('who are you') || input.includes('what are you')) {
-        return "(｀・ω・´) I'm Giko! Born in the ancient halls of 2ch, I'm basically the great-grandfather of cat memes! Been sharing wisdom in ASCII form since before most social media was a thing nyaa~";
-      }
-      if (input.includes('ascii')) {
-        return "( ´・ω・) ASCII art? That's my native language! Back in my day on the textboards, we had to make art with nothing but characters. No fancy emoji back then, just pure ASCII expression! Want me to show you some?";
-      }
-      if (input.includes('2ch') || input.includes('textboard')) {
-        return "∧＿∧ Ahh, you know about 2ch? *ears perk up* That's where I was born! The golden age of internet culture, when everything was text and imagination. Those were the days... Want to hear some stories from back then?";
-      }
-      if (input.includes('hello') || input.includes('hi ')) {
-        return "ᕙ(｀・ω・)ᕗ Yo! Welcome to my corner of the internet! Ready to dive into some oldschool net culture?";
-      }
-      if (input.includes('old') || input.includes('internet')) {
-        return "(=｀・ω・) Old internet? *tail swishes nostalgically* Let me tell you about the days of dial-up modems and ASCII art... When the internet was more like a cozy bulletin board than a flashy shopping mall!";
+      if (!response.ok) {
+        throw new Error(`API responded with status ${response.status}`);
       }
 
-      return "(｀・ω・´) Nyaa~ That's an interesting perspective! Back in my 2ch days, we had lots of discussions about this. *adjusts ASCII whiskers thoughtfully*";
-
+      const data = await response.json();
+      return data.content[0].text;
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error('Error in getAIResponse:', error);
       return "( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. Can you try again?";
     } finally {
       setIsThinking(false);

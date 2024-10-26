@@ -14,61 +14,62 @@ const GikoAvatar = () => {
 /  └-(＿＿＿／`;
 
   const getAIResponse = async (userMessage) => {
+    console.log('=== getAIResponse Started ===');
+    console.log('Current messages:', messages);
+    console.log('New user message:', userMessage);
+    
     setIsThinking(true);
     try {
-      // Get the API URL from environment or use the deployed backend URL
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://your-backend-url.vercel.app';
-      console.log('Current API URL:', apiUrl);
-      console.log('Current environment:', process.env.NODE_ENV);
+      const messagePayload = [...messages, { type: 'user', text: userMessage }].map(msg => ({
+        role: msg.type === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
       
-      const response = await fetch(`${apiUrl}/api/chat`, {
+      console.log('Formatted messages for API:', messagePayload);
+      
+      const requestBody = {
+        messages: messagePayload
+      };
+      
+      console.log('Full request body:', requestBody);
+      console.log('Attempting to fetch from:', 'http://localhost:3001/api/chat');
+
+      const response = await fetch('http://localhost:3001/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          messages: [...messages, { type: 'user', text: userMessage }],
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
+        console.error('API Error Details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText
+        });
         throw new Error(`API responded with status ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('API Response data:', data);
+      console.log('Parsed API Response:', data);
       
-      if (!data.response) {
-        console.error('Unexpected API response format:', data);
-        throw new Error('API response missing expected data');
-      }
-
-      return data.response;
+      return data.content[0].text;
     } catch (error) {
-      console.error('Detailed error in getAIResponse:', {
-        error: error.message,
-        stack: error.stack,
-        apiUrl: process.env.REACT_APP_API_URL,
-        environmentVars: {
-          nodeEnv: process.env.NODE_ENV,
-          apiUrl: process.env.REACT_APP_API_URL
-        }
-      });
-      
-      // Add the error message to the chat
-      setMessages(prev => [...prev, {
-        type: 'giko',
-        text: `( ; ω ; ) Error: ${error.message}`
-      }]);
-      
-      return null; // Return null so we don't add another message
+      console.error('=== Error in getAIResponse ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      return "( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. Can you try again?";
     } finally {
+      console.log('=== getAIResponse Completed ===');
       setIsThinking(false);
     }
   };
@@ -78,37 +79,54 @@ const GikoAvatar = () => {
   };
 
   const handleClick = async () => {
-    if (inputValue.trim() === '') return;
+    console.log('=== handleClick Started ===');
+    console.log('Current input value:', inputValue);
+    
+    if (inputValue.trim() === '') {
+      console.log('Empty input, returning early');
+      return;
+    }
 
     try {
-      // Add user message
       const userMessage = inputValue;
-      console.log('User input:', userMessage);
+      console.log('Processing user message:', userMessage);
       
       const updatedMessages = [
         ...messages,
         { type: 'user', text: userMessage }
       ];
+      console.log('Updated messages array:', updatedMessages);
+      
       setMessages(updatedMessages);
       setInputValue('');
 
-      // Get and add AI response
       console.log('Requesting AI response...');
       const aiResponse = await getAIResponse(userMessage);
       console.log('Received AI response:', aiResponse);
       
-      if (aiResponse) { // Only add AI response if we got one
-        setMessages(prev => [...prev, {
-          type: 'giko',
-          text: aiResponse
-        }]);
+      if (aiResponse) {
+        console.log('Adding AI response to messages');
+        setMessages(prev => {
+          const newMessages = [...prev, {
+            type: 'giko',
+            text: aiResponse
+          }];
+          console.log('New messages state:', newMessages);
+          return newMessages;
+        });
       }
     } catch (error) {
-      console.error('Error in handleClick:', error);
+      console.error('=== Error in handleClick ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       setMessages(prev => [...prev, {
         type: 'giko',
         text: "( ; ω ; ) Something went wrong while processing your message..."
       }]);
+    } finally {
+      console.log('=== handleClick Completed ===');
     }
   };
 
