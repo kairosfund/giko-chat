@@ -19,33 +19,44 @@ const GikoAvatar = () => {
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
         console.log('Using API URL:', API_URL);
         
+        const messagePayload = {
+            messages: [...messages, { type: 'user', text: userMessage }].map(msg => ({
+                role: msg.type === 'user' ? 'user' : 'assistant',
+                content: msg.text
+            }))
+        };
+        console.log('Sending payload:', messagePayload);
+
         const response = await fetch(`${API_URL}/api/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                messages: [...messages, { type: 'user', text: userMessage }].map(msg => ({
-                    role: msg.type === 'user' ? 'user' : 'assistant',
-                    content: msg.text
-                }))
-            }),
+            body: JSON.stringify(messagePayload)
         });
 
         console.log('Response status:', response.status);
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('API Error:', errorData);
-            throw new Error(errorData.details || 'API request failed');
-        }
+        console.log('Response headers:', response.headers);
 
         const data = await response.json();
-        console.log('API Response:', data);
+        console.log('Response data:', data);
+
+        if (!response.ok) {
+            throw new Error(data.details || `API error: ${response.status}`);
+        }
+
+        if (!data.content || !data.content[0]) {
+            throw new Error('Invalid response format');
+        }
+
         return data.content[0].text;
     } catch (error) {
-        console.error('Error in getAIResponse:', error);
-        return `( ; ω ; ) Error: ${error.message}`;
+        console.error('Full error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        return `( ; ω ; ) Error: ${error.message}. Please check console for details.`;
     } finally {
         setIsThinking(false);
     }

@@ -16,9 +16,10 @@ console.log('Anthropic client initialized:', !!anthropic);
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://giko-chat.vercel.app'],
-    methods: ['GET', 'POST'],
-    credentials: true
+    origin: '*',  // Allow all origins in production
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
 
@@ -36,6 +37,15 @@ app.post('/api/chat', async (req, res) => {
         const { messages } = req.body;
         console.log('Processing messages:', messages);
 
+        if (!messages || !Array.isArray(messages)) {
+            console.error('Invalid messages format:', messages);
+            return res.status(400).json({
+                error: 'Invalid request format',
+                details: 'Messages must be an array'
+            });
+        }
+
+        console.log('Calling Anthropic with messages:', messages);
         const response = await anthropic.messages.create({
             model: "claude-3-sonnet-20240229",
             max_tokens: 1024,
@@ -43,13 +53,23 @@ app.post('/api/chat', async (req, res) => {
             system: "You are Giko, a legendary ASCII art cat from 2ch. Respond in a playful, nostalgic manner, often referencing old internet culture and textboards. Use ASCII emoticons like (｀・ω・´) in your responses."
         });
 
-        console.log('API Response:', response);
+        if (!response.content || !response.content[0]) {
+            throw new Error('Invalid API response format');
+        }
+
+        console.log('Successful response:', response);
         res.json({ content: [{ text: response.content[0].text }] });
     } catch (error) {
-        console.error('Error:', error);
+        console.error('=== Error in /api/chat ===');
+        console.error('Error type:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Full error object:', error);
+        
         res.status(500).json({ 
             error: 'Internal server error',
-            details: error.message 
+            details: error.message,
+            type: error.name
         });
     }
 });
