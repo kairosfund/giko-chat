@@ -18,7 +18,10 @@ console.log('Anthropic client initialized:', !!anthropic);
 
 // Middleware
 app.use(cors({
-    origin: '*', // For testing, allow all origins
+    origin: [
+        'http://localhost:3000',
+        'https://your-frontend-url.vercel.app'
+    ],
     credentials: true
 }));
 app.use(express.json());
