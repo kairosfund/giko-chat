@@ -14,49 +14,30 @@ const GikoAvatar = () => {
 /  └-(＿＿＿／`;
 
   const getAIResponse = async (userMessage) => {
-    console.log('=== getAIResponse Started ===');
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-    console.log('Using API URL:', API_URL);
-    
     setIsThinking(true);
     try {
-        const messagePayload = [...messages, { type: 'user', text: userMessage }].map(msg => ({
-            role: msg.type === 'user' ? 'user' : 'assistant',
-            content: msg.text
-        }));
-        
-        console.log('Sending request to:', `${API_URL}/api/chat`);
-        console.log('With payload:', messagePayload);
-        
-        const response = await fetch(`${API_URL}/api/chat`, {
+        const response = await fetch('http://localhost:3001/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                messages: messagePayload
+                messages: [...messages, { type: 'user', text: userMessage }].map(msg => ({
+                    role: msg.type === 'user' ? 'user' : 'assistant',
+                    content: msg.text
+                }))
             }),
         });
 
-        console.log('Response status:', response.status);
-        const data = await response.json();
-        console.log('Response data:', data);
-        
         if (!response.ok) {
-            throw new Error(data.details || 'API request failed');
+            throw new Error(`API responded with status ${response.status}`);
         }
 
-        if (!data.content || !data.content[0] || !data.content[0].text) {
-            throw new Error('Invalid response format from API');
-        }
-
+        const data = await response.json();
         return data.content[0].text;
     } catch (error) {
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack
-        });
-        return `( ; ω ; ) Error: ${error.message}`;
+        console.error('Error in getAIResponse:', error);
+        return "( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. Can you try again?";
     } finally {
         setIsThinking(false);
     }
