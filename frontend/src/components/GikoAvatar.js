@@ -15,8 +15,8 @@ const GikoAvatar = () => {
 
   const getAIResponse = async (userMessage) => {
     console.log('=== getAIResponse Started ===');
-    console.log('Current messages:', messages);
-    console.log('New user message:', userMessage);
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    console.log('Using API URL:', API_URL);
     
     setIsThinking(true);
     try {
@@ -25,9 +25,9 @@ const GikoAvatar = () => {
             content: msg.text
         }));
         
-        console.log('Formatted messages for API:', messagePayload);
+        console.log('Sending request to:', `${API_URL}/api/chat`);
+        console.log('With payload:', messagePayload);
         
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
         const response = await fetch(`${API_URL}/api/chat`, {
             method: 'POST',
             headers: {
@@ -39,23 +39,23 @@ const GikoAvatar = () => {
         });
 
         console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
         
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('API Error:', errorData);
-            throw new Error(errorData.details || 'API request failed');
+            throw new Error(data.details || 'API request failed');
         }
 
-        const data = await response.json();
-        console.log('API Response:', data);
-        
         if (!data.content || !data.content[0] || !data.content[0].text) {
             throw new Error('Invalid response format from API');
         }
 
         return data.content[0].text;
     } catch (error) {
-        console.error('Error in getAIResponse:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
         return `( ; ω ; ) Error: ${error.message}`;
     } finally {
         setIsThinking(false);
