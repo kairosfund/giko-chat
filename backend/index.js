@@ -35,39 +35,47 @@ app.post('/api/chat', async (req, res) => {
     
     try {
         const { messages } = req.body;
-        console.log('Processing messages:', messages);
-
+        
+        // Validate messages format
         if (!messages || !Array.isArray(messages)) {
-            console.error('Invalid messages format:', messages);
-            return res.status(400).json({
-                error: 'Invalid request format',
-                details: 'Messages must be an array'
-            });
+            throw new Error('Messages must be an array');
         }
 
-        console.log('Calling Anthropic with messages:', messages);
+        // Format messages correctly for Claude
+        const formattedMessages = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+        }));
+
+        console.log('Sending to Claude:', formattedMessages);
+
+        // Make the API call
         const response = await anthropic.messages.create({
             model: "claude-3-sonnet-20240229",
             max_tokens: 1024,
-            messages: messages,
-            system: "You are Giko, a legendary ASCII art cat from 2ch. Respond in a playful, nostalgic manner, often referencing old internet culture and textboards. Use ASCII emoticons like (｀・ω・´) in your responses."
+            messages: formattedMessages,
+            system: "You are Giko, a legendary ASCII art cat from 2ch. Respond in a playful, nostalgic manner, often referencing old internet culture and textboards. Use ASCII emoticons like (｀・ω・´) in your responses.",
+            temperature: 0.7
         });
 
-        if (!response.content || !response.content[0]) {
-            throw new Error('Invalid API response format');
-        }
+        console.log('Claude response:', response);
 
-        console.log('Successful response:', response);
-        res.json({ content: [{ text: response.content[0].text }] });
+        // Send response back
+        res.json({
+            content: [{
+                text: response.content[0].text
+            }]
+        });
     } catch (error) {
-        console.error('=== Error in /api/chat ===');
-        console.error('Error type:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('Full error object:', error);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
         
-        res.status(500).json({ 
-            error: 'Internal server error',
+        // Send a more specific error message
+        res.status(500).json({
+            error: 'Chat error',
             details: error.message,
             type: error.name
         });

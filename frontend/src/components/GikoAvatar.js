@@ -17,15 +17,18 @@ const GikoAvatar = () => {
     setIsThinking(true);
     try {
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-        console.log('Using API URL:', API_URL);
         
+        // Create a simpler message format
         const messagePayload = {
-            messages: [...messages, { type: 'user', text: userMessage }].map(msg => ({
-                role: msg.type === 'user' ? 'user' : 'assistant',
-                content: msg.text
-            }))
+            messages: [
+                {
+                    role: "user",
+                    content: userMessage
+                }
+            ]
         };
-        console.log('Sending payload:', messagePayload);
+
+        console.log('Sending to API:', messagePayload);
 
         const response = await fetch(`${API_URL}/api/chat`, {
             method: 'POST',
@@ -35,28 +38,21 @@ const GikoAvatar = () => {
             body: JSON.stringify(messagePayload)
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-
-        const data = await response.json();
-        console.log('Response data:', data);
-
         if (!response.ok) {
-            throw new Error(data.details || `API error: ${response.status}`);
+            const errorData = await response.json();
+            throw new Error(errorData.details || 'API request failed');
         }
 
+        const data = await response.json();
+        
         if (!data.content || !data.content[0]) {
             throw new Error('Invalid response format');
         }
 
         return data.content[0].text;
     } catch (error) {
-        console.error('Full error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
-        return `( ; ω ; ) Error: ${error.message}. Please check console for details.`;
+        console.error('API Error:', error);
+        return `( ; ω ; ) Error: ${error.message}`;
     } finally {
         setIsThinking(false);
     }
