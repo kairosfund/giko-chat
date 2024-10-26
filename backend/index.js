@@ -16,7 +16,8 @@ console.log('Anthropic client initialized:', !!anthropic);
 
 // Middleware
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: ['http://localhost:3000', 'https://giko-chat.vercel.app'],
+    methods: ['GET', 'POST'],
     credentials: true
 }));
 app.use(express.json());

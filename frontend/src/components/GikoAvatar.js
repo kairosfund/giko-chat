@@ -16,7 +16,10 @@ const GikoAvatar = () => {
   const getAIResponse = async (userMessage) => {
     setIsThinking(true);
     try {
-        const response = await fetch('http://localhost:3001/api/chat', {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        console.log('Using API URL:', API_URL);
+        
+        const response = await fetch(`${API_URL}/api/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -29,15 +32,20 @@ const GikoAvatar = () => {
             }),
         });
 
+        console.log('Response status:', response.status);
+
         if (!response.ok) {
-            throw new Error(`API responded with status ${response.status}`);
+            const errorData = await response.json();
+            console.error('API Error:', errorData);
+            throw new Error(errorData.details || 'API request failed');
         }
 
         const data = await response.json();
+        console.log('API Response:', data);
         return data.content[0].text;
     } catch (error) {
         console.error('Error in getAIResponse:', error);
-        return "( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. Can you try again?";
+        return `( ; ω ; ) Error: ${error.message}`;
     } finally {
         setIsThinking(false);
     }
