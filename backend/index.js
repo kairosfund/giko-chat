@@ -74,6 +74,34 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
+// Add this test route
+app.get('/api/test', async (req, res) => {
+    try {
+        console.log('Testing Anthropic connection...');
+        console.log('API Key:', process.env.ANTHROPIC_API_KEY ? 'Present (masked)' : 'Missing');
+        
+        const response = await anthropic.messages.create({
+            model: "claude-3-sonnet-20240229",
+            max_tokens: 1024,
+            messages: [{ role: "user", content: "Say hello!" }],
+            system: "You are Giko, respond with a simple hello."
+        });
+
+        res.json({ 
+            success: true, 
+            message: 'Anthropic connection successful',
+            response: response.content[0].text 
+        });
+    } catch (error) {
+        console.error('Anthropic test error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message,
+            stack: error.stack
+        });
+    }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
