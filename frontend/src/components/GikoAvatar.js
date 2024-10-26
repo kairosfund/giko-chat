@@ -20,57 +20,44 @@ const GikoAvatar = () => {
     
     setIsThinking(true);
     try {
-      const messagePayload = [...messages, { type: 'user', text: userMessage }].map(msg => ({
-        role: msg.type === 'user' ? 'user' : 'assistant',
-        content: msg.text
-      }));
-      
-      console.log('Formatted messages for API:', messagePayload);
-      
-      const requestBody = {
-        messages: messagePayload
-      };
-      
-      console.log('Full request body:', requestBody);
-      console.log('Attempting to fetch from:', 'http://localhost:3001/api/chat');
-
-      const response = await fetch('http://localhost:3001/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Details:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText
+        const messagePayload = [...messages, { type: 'user', text: userMessage }].map(msg => ({
+            role: msg.type === 'user' ? 'user' : 'assistant',
+            content: msg.text
+        }));
+        
+        console.log('Formatted messages for API:', messagePayload);
+        
+        const response = await fetch('http://localhost:3001/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messages: messagePayload
+            }),
         });
-        throw new Error(`API responded with status ${response.status}: ${errorText}`);
-      }
 
-      const data = await response.json();
-      console.log('Parsed API Response:', data);
-      
-      return data.content[0].text;
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('API Error:', errorData);
+            throw new Error(errorData.details || 'API request failed');
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+        
+        if (!data.content || !data.content[0] || !data.content[0].text) {
+            throw new Error('Invalid response format from API');
+        }
+
+        return data.content[0].text;
     } catch (error) {
-      console.error('=== Error in getAIResponse ===');
-      console.error('Error type:', error.constructor.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      return "( ; ω ; ) Nyaa... seems like my ASCII circuits are glitching. Can you try again?";
+        console.error('Error in getAIResponse:', error);
+        return `( ; ω ; ) Error: ${error.message}`;
     } finally {
-      console.log('=== getAIResponse Completed ===');
-      setIsThinking(false);
+        setIsThinking(false);
     }
   };
 
